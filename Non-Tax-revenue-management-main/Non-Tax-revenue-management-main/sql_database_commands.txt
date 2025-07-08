@@ -1,0 +1,97 @@
+-- Create the database
+CREATE DATABASE IF NOT EXISTS non_tax_revenue;
+USE non_tax_revenue;
+
+-- Users table (based on login.php and signup.php)
+CREATE TABLE users (
+    username VARCHAR(50) PRIMARY KEY,
+    password VARCHAR(255) NOT NULL,
+    email VARCHAR(100) NOT NULL,
+    phone VARCHAR(15),
+    aadhaar VARCHAR(12),
+    bank_acc VARCHAR(20),
+    ifsc_code VARCHAR(11)
+);
+
+-- Login attempts table (for tracking login history, based on login.php)
+CREATE TABLE login_attempts (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    username VARCHAR(50),
+    password VARCHAR(255),
+    attempt_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (username) REFERENCES users(username)
+);
+
+-- Departments table (based on department.php and revenuesources.php)
+CREATE TABLE departments (
+    name VARCHAR(100) PRIMARY KEY,
+    amount_collected DECIMAL(15,2) DEFAULT 0.00,
+    description TEXT
+);
+
+-- Revenue Sources table (based on revenuesources.php)
+CREATE TABLE revenue_sources (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    revenue_source VARCHAR(100) NOT NULL,
+    amount_generated DECIMAL(15,2) NOT NULL,
+    allocated_department VARCHAR(100),
+    FOREIGN KEY (allocated_department) REFERENCES departments(name)
+);
+
+-- Scheme table (based on schemes.php, apply.php, legislation.php, outcome.php)
+CREATE TABLE scheme (
+    scheme_id INT PRIMARY KEY AUTO_INCREMENT,
+    scheme_name VARCHAR(100) UNIQUE NOT NULL, -- Added UNIQUE for scheme_name to allow it to be a foreign key in beneficiary
+    scheme_description TEXT,
+    scheme_budget DECIMAL(15,2),
+    scheme_department VARCHAR(100),
+    legislation TEXT, -- Attribute for legislation details
+    outcome TEXT,     -- Attribute for outcome details
+    document TEXT,    -- Attribute for document related to the scheme
+    FOREIGN KEY (scheme_department) REFERENCES departments(name)
+);
+
+-- Beneficiary table (based on Benificiary.php)
+CREATE TABLE beneficiary (
+    beneficiary_id INT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(100) NOT NULL,
+    age INT,
+    scheme_name VARCHAR(100), -- Referenced in Benificiary.php for display
+    location VARCHAR(100),
+    locality VARCHAR(100),
+    house_no VARCHAR(50),
+    state VARCHAR(50),
+    phone_numbers VARCHAR(50),
+    FOREIGN KEY (scheme_name) REFERENCES scheme(scheme_name)
+);
+
+-- Insert default departments
+INSERT INTO departments (name, description) VALUES
+('Education', 'Education Department'),
+('Agriculture', 'Agriculture Department'),
+('Service', 'Service Department'),
+('Industrial', 'Industrial Department');
+
+-- Legislation table (NEW: separate table for legislation details)
+CREATE TABLE legislation (
+    legislation_id INT PRIMARY KEY AUTO_INCREMENT,
+    scheme_id INT NOT NULL,
+    legislation_text TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (scheme_id) REFERENCES scheme(scheme_id)
+);
+
+-- Outcome table (NEW: separate table for outcome details)
+CREATE TABLE outcome (
+    outcome_id INT PRIMARY KEY AUTO_INCREMENT,
+    scheme_id INT NOT NULL,
+    outcome_text TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (scheme_id) REFERENCES scheme(scheme_id)
+);
+
+
+ALTER TABLE scheme
+ADD CONSTRAINT fk_scheme_department
+FOREIGN KEY (scheme_department)
+REFERENCES departments(name);
